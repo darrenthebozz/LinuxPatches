@@ -1,0 +1,227 @@
+diff -ruN /linux-6.0.5/include/linux/capability.h /linux-6.0.5-2/include/linux/capability.h
+--- /linux-6.0.5/include/linux/capability.h	2022-11-02 17:12:56.268216689 +0000
++++ /linux-6.0.5-2/include/linux/capability.h	2023-03-03 03:57:57.922856608 +0000
+@@ -277,5 +277,82 @@
+ 
+ int cap_convert_nscap(struct user_namespace *mnt_userns, struct dentry *dentry,
+ 		      const void **ivalue, size_t size);
++#else
+ 
++extern bool has_capability(struct task_struct *t, int cap);
++extern bool has_ns_capability(struct task_struct *t,
++			      struct user_namespace *ns, int cap);
++extern bool has_capability_noaudit(struct task_struct *t, int cap);
++extern bool has_ns_capability_noaudit(struct task_struct *t,
++				      struct user_namespace *ns, int cap);
++extern bool capable(int cap);
++extern bool ns_capable(struct user_namespace *ns, int cap);
++extern bool ns_capable_noaudit(struct user_namespace *ns, int cap);
++extern bool ns_capable_setid(struct user_namespace *ns, int cap);
++#else
++static inline bool has_capability(struct task_struct *t, int cap)
++{
++	return true;
++}
++static inline bool has_ns_capability(struct task_struct *t,
++			      struct user_namespace *ns, int cap)
++{
++	return true;
++}
++static inline bool has_capability_noaudit(struct task_struct *t, int cap)
++{
++	return true;
++}
++static inline bool has_ns_capability_noaudit(struct task_struct *t,
++				      struct user_namespace *ns, int cap)
++{
++	return true;
++}
++static inline bool capable(int cap)
++{
++	return true;
++}
++static inline bool ns_capable(struct user_namespace *ns, int cap)
++{
++	return true;
++}
++static inline bool ns_capable_noaudit(struct user_namespace *ns, int cap)
++{
++	return true;
++}
++static inline bool ns_capable_setid(struct user_namespace *ns, int cap)
++{
++	return true;
++}
++#endif /* CONFIG_MULTIUSER */
++bool privileged_wrt_inode_uidgid(struct user_namespace *ns,
++				 struct user_namespace *mnt_userns,
++				 const struct inode *inode);
++bool capable_wrt_inode_uidgid(struct user_namespace *mnt_userns,
++			      const struct inode *inode, int cap);
++extern bool file_ns_capable(const struct file *file, struct user_namespace *ns, int cap);
++extern bool ptracer_capable(struct task_struct *tsk, struct user_namespace *ns);
++static inline bool perfmon_capable(void)
++{
++	return capable(CAP_PERFMON) || capable(CAP_SYS_ADMIN);
++}
++
++static inline bool bpf_capable(void)
++{
++	return capable(CAP_BPF) || capable(CAP_SYS_ADMIN);
++}
++
++static inline bool checkpoint_restore_ns_capable(struct user_namespace *ns)
++{
++	return ns_capable(ns, CAP_CHECKPOINT_RESTORE) ||
++		ns_capable(ns, CAP_SYS_ADMIN);
++}
++
++/* audit system wants to get cap info from files as well */
++int get_vfs_caps_from_disk(struct user_namespace *mnt_userns,
++			   const struct dentry *dentry,
++			   struct cpu_vfs_cap_data *cpu_caps);
++
++int cap_convert_nscap(struct user_namespace *mnt_userns, struct dentry *dentry,
++		      const void **ivalue, size_t size);
+ #endif /* !_LINUX_CAPABILITY_H */
+diff -ruN /linux-6.0.5/kernel/capability.c /linux-6.0.5-2/kernel/capability.c
+--- /linux-6.0.5/kernel/capability.c	2022-11-02 17:13:03.279216802 +0000
++++ /linux-6.0.5-2/kernel/capability.c	2023-03-03 04:04:42.316190954 +0000
+@@ -36,7 +36,7 @@
+ }
+ __setup("no_file_caps", file_caps_disable);
+ 
+-#ifdef CONFIG_MULTIUSER
++//#ifdef CONFIG_MULTIUSER
+ /*
+  * More recent versions of libcap are available from:
+  *
+@@ -450,7 +450,7 @@
+ 	return ns_capable(&init_user_ns, cap);
+ }
+ EXPORT_SYMBOL(capable);
+-#endif /* CONFIG_MULTIUSER */
++//#endif /* CONFIG_MULTIUSER */
+ 
+ /**
+  * file_ns_capable - Determine if the file's opener had a capability in effect
+diff -ruN /linux-6.0.5/kernel/sys.c /linux-6.0.5-2/kernel/sys.c
+--- /linux-6.0.5/kernel/sys.c	2022-11-02 17:13:04.612216824 +0000
++++ /linux-6.0.5-2/kernel/sys.c	2023-03-03 03:56:47.722856445 +0000
+@@ -925,6 +925,115 @@
+ {
+ 	return __sys_setfsgid(gid);
+ }
++#else
++
++long __sys_setregid(gid_t rgid, gid_t egid)
++{
++	return 0;
++}
++
++SYSCALL_DEFINE2(setregid, gid_t, rgid, gid_t, egid)
++{
++	return __sys_setregid(rgid, egid);
++}
++
++long __sys_setgid(gid_t gid)
++{
++	return 0;
++}
++
++SYSCALL_DEFINE1(setgid, gid_t, gid)
++{
++	return __sys_setgid(gid);
++}
++
++static int set_user(struct cred *new)
++{
++	return 0;
++}
++
++static void flag_nproc_exceeded(struct cred *new)
++{
++	return;
++}
++
++long __sys_setreuid(uid_t ruid, uid_t euid)
++{
++	return 0;
++}
++
++SYSCALL_DEFINE2(setreuid, uid_t, ruid, uid_t, euid)
++{
++	return __sys_setreuid(ruid, euid);
++}
++
++long __sys_setuid(uid_t uid)
++{
++	return 0;
++}
++
++SYSCALL_DEFINE1(setuid, uid_t, uid)
++{
++	return __sys_setuid(uid);
++}
++
++
++/*
++ * This function implements a generic ability to update ruid, euid,
++ * and suid.  This allows you to implement the 4.4 compatible seteuid().
++ */
++long __sys_setresuid(uid_t ruid, uid_t euid, uid_t suid)
++{
++	return 0;
++}
++
++SYSCALL_DEFINE3(setresuid, uid_t, ruid, uid_t, euid, uid_t, suid)
++{
++	return __sys_setresuid(ruid, euid, suid);
++}
++
++SYSCALL_DEFINE3(getresuid, uid_t __user *, ruidp, uid_t __user *, euidp, uid_t __user *, suidp)
++{
++	return 0;
++}
++
++/*
++ * Same as above, but for rgid, egid, sgid.
++ */
++long __sys_setresgid(gid_t rgid, gid_t egid, gid_t sgid)
++{
++	return 0;
++}
++
++SYSCALL_DEFINE3(setresgid, gid_t, rgid, gid_t, egid, gid_t, sgid)
++{
++	return __sys_setresgid(rgid, egid, sgid);
++}
++
++SYSCALL_DEFINE3(getresgid, gid_t __user *, rgidp, gid_t __user *, egidp, gid_t __user *, sgidp)
++{
++	return 0;
++}
++
++long __sys_setfsuid(uid_t uid)
++{
++	return 0;
++}
++
++SYSCALL_DEFINE1(setfsuid, uid_t, uid)
++{
++	return __sys_setfsuid(uid);
++}
++
++long __sys_setfsgid(gid_t gid)
++{
++	return 0;
++}
++
++SYSCALL_DEFINE1(setfsgid, gid_t, gid)
++{
++	return __sys_setfsgid(gid);
++}
+ #endif /* CONFIG_MULTIUSER */
+ 
+ /**
+Binary files /linux-6.0.5/scripts/kconfig/mconf and /linux-6.0.5-2/scripts/kconfig/mconf differ
