@@ -1,0 +1,11 @@
+diff -ruN linux-6.4.2-clean/init/Kconfig linux-6.4.2/init/Kconfig
+--- linux-6.4.2-clean/init/Kconfig	2023-07-05 17:30:31.000000000 +0000
++++ linux-6.4.2/init/Kconfig	2023-07-10 14:15:02.889004638 +0000
+@@ -1452,7 +1452,6 @@
+ menuconfig EXPERT
+ 	bool "Configure standard kernel features (expert users)"
+ 	# Unhide debug options, to make the on-by-default options visible
+-	select DEBUG_KERNEL
+ 	help
+ 	  This option allows certain base kernel options and settings
+ 	  to be disabled or tweaked. This is for specialized
