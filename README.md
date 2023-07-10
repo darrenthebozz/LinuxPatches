@@ -9,5 +9,5 @@ applications that dont like the dummy response like gtk
 Expert Patch:
 No longer includes Debug Kernel
 
-Optional OOM Killer:
+Optional OOM Killer Patch:
 Lets you remove OOM Killer.
