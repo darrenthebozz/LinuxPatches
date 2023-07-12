@@ -1,0 +1,33 @@
+diff -ruN linux-6.4.2-clear/arch/x86/Kconfig linux-6.4.2/arch/x86/Kconfig
+--- linux-6.4.2-clear/arch/x86/Kconfig	2023-07-05 17:30:31.000000000 +0000
++++ linux-6.4.2/arch/x86/Kconfig	2023-07-12 14:36:19.013981886 +0000
+@@ -1627,7 +1627,7 @@
+ 
+ config ARCH_FLATMEM_ENABLE
+ 	def_bool y
+-	depends on X86_32 && !NUMA
++	depends on !NUMA
+ 
+ config ARCH_SPARSEMEM_ENABLE
+ 	def_bool y
+diff -ruN linux-6.4.2-clear/arch/x86/include/asm/sparsemem.h linux-6.4.2/arch/x86/include/asm/sparsemem.h
+--- linux-6.4.2-clear/arch/x86/include/asm/sparsemem.h	2023-07-05 17:30:31.000000000 +0000
++++ linux-6.4.2/arch/x86/include/asm/sparsemem.h	2023-07-12 15:22:09.940655134 +0000
+@@ -3,8 +3,6 @@
+ #define _ASM_X86_SPARSEMEM_H
+ 
+ #include <linux/types.h>
+-
+-#ifdef CONFIG_SPARSEMEM
+ /*
+  * generic non-linear memory support:
+  *
+@@ -29,8 +27,6 @@
+ # define MAX_PHYSMEM_BITS	(pgtable_l5_enabled() ? 52 : 46)
+ #endif
+ 
+-#endif /* CONFIG_SPARSEMEM */
+-
+ #ifndef __ASSEMBLY__
+ #ifdef CONFIG_NUMA_KEEP_MEMINFO
+ extern int phys_to_target_node(phys_addr_t start);
