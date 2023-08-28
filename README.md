@@ -8,7 +8,7 @@ Expert Patch:
 No longer includes Debug Kernel
 
 Optional OOM Killer Patch:
-Lets you remove OOM Killer.
+Replaces OOM Killer with panic.
 
 Flatmem Patch:
 Attempts to enable flatmem usage. Useful when your system does not support NUMA.
